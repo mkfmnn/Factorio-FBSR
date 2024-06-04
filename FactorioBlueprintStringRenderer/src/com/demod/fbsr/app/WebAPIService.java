@@ -21,12 +21,12 @@ import org.rapidoid.http.MediaType;
 import org.rapidoid.setup.App;
 import org.rapidoid.setup.On;
 
-import com.demod.dcba.CommandReporting;
 import com.demod.factorio.Config;
 import com.demod.factorio.Utils;
 import com.demod.fbsr.Blueprint;
 import com.demod.fbsr.BlueprintFinder;
 import com.demod.fbsr.BlueprintStringData;
+import com.demod.fbsr.CommandReporting;
 import com.demod.fbsr.FBSR;
 import com.demod.fbsr.WebUtils;
 import com.google.common.collect.ImmutableList;
@@ -213,8 +213,6 @@ public class WebAPIService extends AbstractIdleService {
 				}
 
 			} finally {
-				ServiceFinder.findService(BlueprintBotDiscordService.class)
-						.ifPresent(s -> s.getBot().submitReport(reporting));
 			}
 
 		});

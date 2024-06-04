@@ -37,8 +37,6 @@ import javax.imageio.ImageIO;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import com.demod.dcba.CommandReporting;
-import com.demod.dcba.CommandReporting.Level;
 import com.demod.factorio.DataTable;
 import com.demod.factorio.FactorioData;
 import com.demod.factorio.ModInfo;
@@ -49,6 +47,7 @@ import com.demod.factorio.prototype.EntityPrototype;
 import com.demod.factorio.prototype.ItemPrototype;
 import com.demod.factorio.prototype.RecipePrototype;
 import com.demod.factorio.prototype.TilePrototype;
+import com.demod.fbsr.CommandReporting.Level;
 import com.demod.fbsr.Renderer.Layer;
 import com.demod.fbsr.WorldMap.RailEdge;
 import com.demod.fbsr.WorldMap.RailNode;

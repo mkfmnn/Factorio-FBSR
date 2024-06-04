@@ -24,8 +24,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import com.demod.factorio.Utils;
-import com.demod.fbsr.app.BlueprintBotDiscordService;
-import com.demod.fbsr.app.ServiceFinder;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Message;
@@ -151,17 +149,6 @@ public final class WebUtils {
 			return alreadyUploaded.get();
 		}
 
-		Optional<BlueprintBotDiscordService> discordService = ServiceFinder
-				.findService(BlueprintBotDiscordService.class);
-		if (discordService.isPresent()) {
-			try {
-				String url = discordService.get().useDiscordForFileHosting(fileName, fileData).toString();
-				addToUploadedDatabase(fileHash, url);
-				return url;
-			} catch (Exception e2) {
-				throw new IOException("File hosting failed!", e2);
-			}
-		}
 		throw new IOException("File hosting failed! (Discord not available)");
 	}
 
