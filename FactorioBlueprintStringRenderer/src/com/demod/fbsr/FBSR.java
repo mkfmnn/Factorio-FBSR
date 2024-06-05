@@ -36,6 +36,8 @@ import javax.imageio.ImageIO;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.demod.factorio.DataTable;
 import com.demod.factorio.FactorioData;
@@ -47,7 +49,6 @@ import com.demod.factorio.prototype.EntityPrototype;
 import com.demod.factorio.prototype.ItemPrototype;
 import com.demod.factorio.prototype.RecipePrototype;
 import com.demod.factorio.prototype.TilePrototype;
-import com.demod.fbsr.CommandReporting.Level;
 import com.demod.fbsr.Renderer.Layer;
 import com.demod.fbsr.WorldMap.RailEdge;
 import com.demod.fbsr.WorldMap.RailNode;
@@ -70,6 +71,8 @@ public class FBSR {
 		TilePrototype prototype;
 		TileRendererFactory factory;
 	}
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(FBSR.class);
 
 	private static final int MAX_WORLD_RENDER_PIXELS = 10000 * 10000;
 
@@ -173,7 +176,7 @@ public class FBSR {
 		}
 	}
 
-	private static BufferedImage applyRendering(CommandReporting reporting, int tileSize, List<Renderer> renderers,
+	private static BufferedImage applyRendering(int tileSize, List<Renderer> renderers,
 			ArrayListMultimap<Direction, PanelRenderer> borderPanels, JSONObject options) throws JSONException {
 
 		Rectangle2D.Double worldBounds = computeBounds(renderers);
@@ -312,7 +315,8 @@ public class FBSR {
 			try {
 				r.renderShadows(shadowG);
 			} catch (Exception e) {
-				reporting.addException(e);
+				LOGGER.error("applyRendering:shadows", e);
+
 			}
 		});
 		shadowG.dispose();
@@ -363,7 +367,7 @@ public class FBSR {
 					g.draw(r.bounds);
 				}
 			} catch (Exception e) {
-				reporting.addException(e);
+				LOGGER.error("applyRendering:render", e);
 			}
 		});
 		g.setTransform(worldXform);
@@ -396,7 +400,7 @@ public class FBSR {
 				try {
 					panel.render(g, bounds.width, bounds.height);
 				} catch (Exception e) {
-					reporting.addException(e);
+					LOGGER.error("border panel rendering", e);
 				}
 			}
 		}
@@ -415,7 +419,7 @@ public class FBSR {
 				try {
 					panel.render(g, bounds.width, bounds.height);
 				} catch (Exception e) {
-					reporting.addException(e);
+					LOGGER.error("border panel rendering", e);
 				}
 				bounds.y += panel.minHeight / worldRenderScale;
 			}
@@ -431,7 +435,7 @@ public class FBSR {
 				try {
 					panel.render(g, bounds.width, bounds.height);
 				} catch (Exception e) {
-					reporting.addException(e);
+					LOGGER.error("border panel rendering", e);
 				}
 				bounds.y += panel.minHeight / worldRenderScale;
 			}
@@ -448,16 +452,15 @@ public class FBSR {
 				try {
 					panel.render(g, bounds.width, bounds.height);
 				} catch (Exception e) {
-					reporting.addException(e);
+					LOGGER.error("border panel rendering", e);
 				}
 			}
 		}
 
-		Level level = reporting.getLevel();
-		if (level != Level.INFO) {
+		if (LOGGER.isDebugEnabled()) {
 			g.setTransform(worldXform);
 			g.setStroke(GRID_STROKE);
-			g.setColor(level.getColor().darker());
+			g.setColor(Color.magenta.darker());
 			g.draw(centerBounds);
 		}
 
@@ -922,12 +925,11 @@ public class FBSR {
 
 	}
 
-	public static BufferedImage renderBlueprint(Blueprint blueprint, CommandReporting reporting)
-			throws JSONException, IOException {
-		return renderBlueprint(blueprint, reporting, new JSONObject());
+	public static BufferedImage renderBlueprint(Blueprint blueprint) throws JSONException, IOException {
+		return renderBlueprint(blueprint, new JSONObject());
 	}
 
-	public static BufferedImage renderBlueprint(Blueprint blueprint, CommandReporting reporting, JSONObject options)
+	public static BufferedImage renderBlueprint(Blueprint blueprint, JSONObject options)
 			throws JSONException, IOException {
 		System.out.println("Rendering " + blueprint.getLabel().orElse("(No Name)"));
 		long startMillis = System.currentTimeMillis();
@@ -950,7 +952,7 @@ public class FBSR {
 				tuple.prototype = prototype.get();
 				tuple.factory = EntityRendererFactory.forType(tuple.prototype.getType());
 				if (options.optBoolean("debug-typeMapping")) {
-					reporting.addDebug(entity.getName() + " -> " + tuple.factory.getClass().getSimpleName());
+					LOGGER.debug(entity.getName() + " -> " + tuple.factory.getClass().getSimpleName());
 				}
 			}
 			entityRenderingTuples.add(tuple);
@@ -967,7 +969,7 @@ public class FBSR {
 				tuple.prototype = prototype.get();
 				tuple.factory = TileRendererFactory.forType(tuple.prototype.getType());
 				if (options.optBoolean("debug-typeMapping")) {
-					reporting.addDebug(tile.getName() + " -> " + tuple.factory.getClass().getSimpleName());
+					LOGGER.debug(tile.getName() + " -> " + tuple.factory.getClass().getSimpleName());
 				}
 			}
 			tileRenderingTuples.add(tuple);
@@ -982,14 +984,14 @@ public class FBSR {
 			try {
 				t.factory.populateWorldMap(map, table, t.entity, t.prototype);
 			} catch (Exception e) {
-				reporting.addException(e);
+				LOGGER.error("entityRenderingTuples.populateWorldMap", e);
 			}
 		});
 		tileRenderingTuples.forEach(t -> {
 			try {
 				t.factory.populateWorldMap(map, table, t.tile, t.prototype);
 			} catch (Exception e) {
-				reporting.addException(e);
+				LOGGER.error("tileRenderingTuples.populateWorldMap", e);
 			}
 		});
 
@@ -997,7 +999,7 @@ public class FBSR {
 			try {
 				t.factory.populateLogistics(map, table, t.entity, t.prototype);
 			} catch (Exception e) {
-				reporting.addException(e);
+				LOGGER.error("entityRenderingTuples.populateLogistics", e);
 			}
 		});
 
@@ -1013,14 +1015,14 @@ public class FBSR {
 			try {
 				t.factory.createRenderers(renderers::add, map, table, t.entity, t.prototype);
 			} catch (Exception e) {
-				reporting.addException(e);
+				LOGGER.error("entityRenderingTuples.createRenderers", e);
 			}
 		});
 		tileRenderingTuples.forEach(t -> {
 			try {
 				t.factory.createRenderers(renderers::add, map, table, t.tile, t.prototype);
 			} catch (Exception e) {
-				reporting.addException(e);
+				LOGGER.error("tileRenderingTuples.createRenderers", e);
 			}
 		});
 
@@ -1028,7 +1030,7 @@ public class FBSR {
 			try {
 				t.factory.createModuleIcons(renderers::add, map, table, t.entity, t.prototype);
 			} catch (Exception e) {
-				reporting.addException(e);
+				LOGGER.error("entityRenderingTuples.createModuleIcons", e);
 			}
 		});
 
@@ -1036,7 +1038,7 @@ public class FBSR {
 			try {
 				t.factory.createWireConnections(renderers::add, map, table, t.entity, t.prototype);
 			} catch (Exception e) {
-				reporting.addException(e);
+				LOGGER.error("entityRenderingTuples.createWireConnections", e);
 			}
 		});
 
@@ -1084,7 +1086,7 @@ public class FBSR {
 			});
 		}
 
-		BufferedImage result = applyRendering(reporting, (int) Math.round(tileSize), renderers, borderPanels, options);
+		BufferedImage result = applyRendering((int) Math.round(tileSize), renderers, borderPanels, options);
 
 		long endMillis = System.currentTimeMillis();
 		System.out.println("\tRender Time " + (endMillis - startMillis) + " ms");
