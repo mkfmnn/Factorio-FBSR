@@ -15,14 +15,14 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.zip.ZipFile;
 
 import org.json.JSONException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.demod.factorio.ModInfo.Dependency;
 import com.demod.factorio.ModInfo.DependencyType;
-
 import com.google.common.io.ByteStreams;
 
 public class ModLoader {
@@ -84,7 +84,7 @@ public class ModLoader {
 
 					try (InputStream inputStream = zipFile.getInputStream(entry)) {
 						files.put(name, ByteStreams.toByteArray(inputStream));
-						System.out.println("ZIP ENTRY " + file.getName() + ": " + entry.getName());// XXX
+						LOGGER.debug("ZIP ENTRY {}: {}", file.getName(), entry.getName());// XXX
 					} catch (IOException e) {
 						throw new RuntimeException(e);
 					}
@@ -112,7 +112,7 @@ public class ModLoader {
 
 			if (!resource.isPresent() && lastResourceFolder.isPresent()) {
 				path = lastResourceFolder.get() + path;
-				System.out.println("FRANKENPATH: " + path);
+				LOGGER.debug("FRANKENPATH: {}", path);
 				resource = Optional.ofNullable(files.get(path));
 			}
 
@@ -121,6 +121,8 @@ public class ModLoader {
 			return resource.map(ByteArrayInputStream::new);
 		}
 	}
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(ModLoader.class);
 
 	private final Set<String> modExclude;
 
@@ -147,7 +149,8 @@ public class ModLoader {
 				for (Dependency dependency : mod.getInfo().getDependencies()) {
 					String depName = dependency.getName();
 					if (getMod(depName).isPresent()) {
-						if (!order.contains(depName) && dependency.getType() != DependencyType.DOES_NOT_AFFECT_LOAD_ORDER) {
+						if (!order.contains(depName)
+								&& dependency.getType() != DependencyType.DOES_NOT_AFFECT_LOAD_ORDER) {
 							missingDep = true;
 							break;
 						}
@@ -166,7 +169,7 @@ public class ModLoader {
 			order.remove("core");
 			order.add(0, "core");
 		}
-		return order.stream().map(this::getMod).map(Optional::get).collect(Collectors.toList());
+		return order.stream().map(this::getMod).map(Optional::get).toList();
 	}
 
 	public void loadFolder(File folder) throws IOException {
@@ -180,14 +183,14 @@ public class ModLoader {
 				if (new File(file, "info.json").exists()) {
 					ModFolder mod = new ModFolder(file);
 					mods.put(mod.getInfo().getName(), mod);
-					System.out.println("MOD FOLDER LOADED: " + file.getName());
+					LOGGER.debug("MOD FOLDER LOADED: {}", file.getName());
 				} else {
 					loadFolder(file);
 				}
 			} else if (file.getName().endsWith(".zip")) {
 				ModZip mod = new ModZip(file);
 				mods.put(mod.getInfo().getName(), mod);
-				System.out.println("MOD ZIP LOADED: " + file.getName());
+				LOGGER.debug("MOD ZIP LOADED: {}", file.getName());
 			}
 		}
 	}

@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -115,8 +114,7 @@ public class DataTable {
 					List<TechPrototype> bonusGroup = technologies.values().stream()
 							.filter(bonus -> bonus.getName().startsWith(bonusMatch))
 							.peek(b -> b.setBonusLevel(-Integer.parseInt(b.getName().replace(bonusName, ""))))
-							.sorted((b1, b2) -> Integer.compare(b1.getBonusLevel(), b2.getBonusLevel()))
-							.collect(Collectors.toList());
+							.sorted((b1, b2) -> Integer.compare(b1.getBonusLevel(), b2.getBonusLevel())).toList();
 
 					for (TechPrototype bonus : bonusGroup) {
 						bonus.setBonus(true);
@@ -201,8 +199,7 @@ public class DataTable {
 		if (item.isPresent()) {
 			return ImmutableList.of(item.get());
 		}
-		return entityItemNameMapping.get(entityName).stream().map(this::getItem).map(Optional::get)
-				.collect(Collectors.toList());
+		return entityItemNameMapping.get(entityName).stream().map(this::getItem).map(Optional::get).toList();
 	}
 
 	public Optional<LuaValue> getRaw(String... path) {

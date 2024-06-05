@@ -178,6 +178,7 @@ public class FBSR {
 
 	private static BufferedImage applyRendering(int tileSize, List<Renderer> renderers,
 			ArrayListMultimap<Direction, PanelRenderer> borderPanels, JSONObject options) throws JSONException {
+		LOGGER.info("Rendering");
 
 		Rectangle2D.Double worldBounds = computeBounds(renderers);
 		worldBounds.setFrameFromDiagonal(Math.floor(worldBounds.getMinX() + 0.4) - 1,
@@ -277,7 +278,7 @@ public class FBSR {
 
 		int imageWidth = (int) (totalBounds.getWidth() * worldRenderScale * tileSize);
 		int imageHeight = (int) (totalBounds.getHeight() * worldRenderScale * tileSize);
-		System.out.println("\t" + imageWidth + "x" + imageHeight + " (" + worldRenderScale + ")");
+		LOGGER.info("Dimensions: {}x{} (scale: {})", imageWidth, imageHeight, worldRenderScale);
 
 		BufferedImage image = new BufferedImage(imageWidth, imageHeight, BufferedImage.TYPE_INT_RGB);
 		Graphics2D g = image.createGraphics();
@@ -931,10 +932,11 @@ public class FBSR {
 
 	public static BufferedImage renderBlueprint(Blueprint blueprint, JSONObject options)
 			throws JSONException, IOException {
-		System.out.println("Rendering " + blueprint.getLabel().orElse("(No Name)"));
+		LOGGER.info("Rendering blueprint \"{}\"", blueprint.getLabel().orElse("(No Name)"));
 		long startMillis = System.currentTimeMillis();
 
 		DataTable table = FactorioData.getTable();
+		LOGGER.info("Building map and preparing renderers");
 		WorldMap map = new WorldMap();
 
 		List<EntityRenderingTuple> entityRenderingTuples = new ArrayList<EntityRenderingTuple>();

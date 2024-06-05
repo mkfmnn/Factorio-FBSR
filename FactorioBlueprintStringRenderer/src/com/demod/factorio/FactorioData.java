@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.StringReader;
+import java.io.UncheckedIOException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -40,6 +41,8 @@ import org.luaj.vm2.lib.Bit32Lib;
 import org.luaj.vm2.lib.DebugLib;
 import org.luaj.vm2.lib.ResourceFinder;
 import org.luaj.vm2.lib.jse.JsePlatform;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.demod.factorio.ModLoader.Mod;
 import com.demod.factorio.port.SimpleMathFormula;
@@ -50,6 +53,7 @@ import com.diffplug.common.base.Box;
 
 public class FactorioData {
 
+	private static final Logger LOGGER = LoggerFactory.getLogger(FactorioData.class);
 	private static final String SEARCH_MOD = "__MOD__";
 	private static final String SEARCH_RESOURCE = "__RESOURCE__";
 
@@ -220,7 +224,7 @@ public class FactorioData {
 	}
 
 	private static DataTable initializeDataTable() throws JSONException, IOException {
-		setupWorkingDirectory();
+		LOGGER.info("Loading factorio data");
 
 		factorio = new File(Config.get().getString("factorio"));
 
@@ -252,11 +256,7 @@ public class FactorioData {
 
 		List<Mod> loadOrder = modLoader.getModsInLoadOrder();
 
-		System.out.println("LOAD ORDER:");
-		for (Mod mod : loadOrder) {
-			ModInfo info = mod.getInfo();
-			System.out.println(" " + info.getName());
-		}
+		LOGGER.debug("LOAD ORDER: {}", loadOrder.stream().map(m -> m.getInfo().getName()).toList());
 
 		Box<Mod> currentMod = Box.of(modLoader.getMod("core").get());
 
@@ -388,6 +388,7 @@ public class FactorioData {
 		globals.finder = new ResourceFinder() {
 			@Override
 			public InputStream findResource(String filename) {
+				LOGGER.debug("ResourceFinder.findResource({})", filename);
 				/*
 				 * Problematic call stack: PackageLib$searchpath.invoke(Varargs) line: 291
 				 * PackageLib$lua_searcher.invoke(Varargs) line: 263
@@ -414,14 +415,12 @@ public class FactorioData {
 				if (filename.startsWith(SEARCH_MOD) && currentMod.get() != null) {
 					try {
 						return currentMod.get().getResource(filename.replace(SEARCH_MOD, "")).orElse(null);
-					} catch (Exception e) {
-						e.printStackTrace();
-						throw new InternalError(e);
+					} catch (IOException e) {
+						throw new UncheckedIOException(e);
 					}
 				} else if (filename.startsWith(SEARCH_RESOURCE)) {
 					InputStream stream = FactorioData.class.getClassLoader()
 							.getResourceAsStream(filename.replace(SEARCH_RESOURCE, "lua"));
-					// System.out.println(stream != null);
 					return stream;
 				} else if (filename.startsWith("__") && (filename.indexOf("__", 2) > -1)) {
 					int matchEnd = filename.indexOf("__", 2);
@@ -474,7 +473,7 @@ public class FactorioData {
 			try {
 				File jarFolder = new File(
 						FactorioData.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath())
-								.getParentFile();
+						.getParentFile();
 				// System.out.println("Jar Folder: " +
 				// jarFolder.getAbsolutePath());
 				System.setProperty("user.dir", jarFolder.getAbsolutePath());

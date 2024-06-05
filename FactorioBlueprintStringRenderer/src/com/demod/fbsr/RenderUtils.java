@@ -21,6 +21,8 @@ import java.util.stream.Collectors;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.luaj.vm2.LuaValue;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.demod.factorio.DataTable;
 import com.demod.factorio.FactorioData;
@@ -34,6 +36,7 @@ import com.google.common.collect.LinkedHashMultiset;
 import com.google.common.collect.Multiset;
 
 public final class RenderUtils {
+	private static final Logger LOGGER = LoggerFactory.getLogger(RenderUtils.class);
 	public static final BufferedImage EMPTY_IMAGE = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
 	static {
 		EMPTY_IMAGE.setRGB(0, 0, 0x00000000);
@@ -79,6 +82,7 @@ public final class RenderUtils {
 		return new Renderer(layer, position) {
 			@Override
 			public void render(Graphics2D g) {
+				LOGGER.debug("rendering text {} at {}", string, position);
 				AffineTransform pat = g.getTransform();
 
 				g.setFont(new Font("Monospaced", Font.BOLD, 1).deriveFont(0.4f));
@@ -106,6 +110,7 @@ public final class RenderUtils {
 		return new Renderer(layer, position) {
 			@Override
 			public void render(Graphics2D g) {
+				LOGGER.debug("rendering text {} at {}", string, position);
 				g.setFont(new Font("Monospaced", Font.BOLD, 1).deriveFont(0.4f));
 				float textX = (float) bounds.x;
 				float textY = (float) bounds.y;
